@@ -13,108 +13,78 @@ public class UVA10258 {
 		reader.readLine();
 		String s;
 		for (int i = 0; i < n; i++) {
-			ArrayList<Scoreboard> score = new ArrayList<Scoreboard>();
+			ArrayList<Contestant> contestants = new ArrayList<Contestant>();
+			int[] pos = new int[100];
+			for (int j = 0; j < 100; j++) {
+				pos[j] = -1;
+			}
+			
 			while ((s = reader.readLine()) != null && s.length() != 0) {
 				StringTokenizer tokenizer = new StringTokenizer(s);
-				int id = Integer.parseInt(tokenizer.nextToken());
-				int prob = Integer.parseInt(tokenizer.nextToken());
+				int id = Integer.parseInt(tokenizer.nextToken()) - 1;
+				int prob = Integer.parseInt(tokenizer.nextToken()) - 1;
 				int time = Integer.parseInt(tokenizer.nextToken());
-				String status = tokenizer.nextToken();
-				int j = 0;
-				Scoreboard temp = null;
-				while (j < score.size()) {
-					if (score.get(j).id == id) {
-						temp = score.get(j);
-						break;
-					}
-					j++;
+				String c = tokenizer.nextToken();
+				if (pos[id] == -1) {
+					pos[id] = contestants.size();
+					contestants.add(new Contestant(id));
 				}
-				if (j == score.size()) {
-					score.add(new Scoreboard(j));
-					temp = score.get(j);
-				}
-				if (status.equals("I")) {
-					temp.updateSub(new Submission(prob, time, false));
-				} else if (status.equals("C")) {
-					temp.updateSub(new Submission(prob, time, true));
+				if (c.equals("C")) {
+					contestants.get(pos[id]).submitCor(prob, time);
+				} else if (c.equals("I")) {
+					contestants.get(pos[id]).submitInc(prob);
 				}
 			}
-			for (int j = 0; j < score.size(); j++) {
-				score.get(j).updateScore();
+			
+			Collections.sort(contestants);
+			for (Contestant c: contestants) {
+				System.out.println((c.id + 1) + " " + c.probs + " " + c.time);
 			}
-			Collections.sort(score);
-			for (int j = 0; j < score.size(); j++) {
-				Scoreboard temp = score.get(j);
-				System.out.println(temp.id + " " + temp.probs + " " + temp.time);
+			if (i != n - 1) {
+				System.out.println();
 			}
 		}
 	}
 	
-	static class Submission implements Comparable<Submission>{
+	static class Contestant implements Comparable<Contestant> {
 		int id;
+		int probs;
 		int time;
-		boolean status;
-		
-		Submission(int _id, int _time, boolean _status) {
+		boolean[] correct = new boolean[9];
+		int[] incorrect = new int[9];
+		Contestant (int _id) {
 			id = _id;
-			time = _time;
-			status = _status;
-		}
-		
-		public int compareTo(Submission other) {
-			return this.time - other.time;
-		}
-	}
-	
-	static class Scoreboard implements Comparable<Scoreboard>{
-		boolean[] prob = new boolean[9];
-		int[] incor = new int[9];
-		int time = 0;
-		int probs = 0;
-		int id;
-		ArrayList<Submission> mysubs = new ArrayList<Submission>();
-		
-		Scoreboard(int _id) {
+			probs = 0;
+			time = 0;
 			for (int i = 0; i < 9; i++) {
-				prob[i] = false;
-				incor[i] = 0;
-			}
-			id = _id;
-		}
-		
-		public void updateScore() {
-			Collections.sort(mysubs);
-			for (int i = 0; i < mysubs.size(); i++) {
-				Submission sub = mysubs.get(i);
-				if (!prob[sub.id]) {
-					if (sub.status) {
-						prob[sub.id] = true;
-						probs++;
-						time = time + sub.time + 20 * incor[sub.id];
-					} else {
-						incor[sub.id]++;
-					}
-				}
+				correct[i] = true;
+				incorrect[i] = 0;
 			}
 		}
 		
-		public void updateSub(Submission sub) {
-			mysubs.add(sub);
+		public void submitCor(int pid, int _time) {
+			if (correct[pid]) {
+				time = time + _time + incorrect[pid] * 20;
+				probs++;
+				correct[pid] = false;
+			}
 		}
 		
-		public int compareTo(Scoreboard other) {
-			if (this.probs < other.probs) {
-				return 1;
-			} else if (this.probs > other.probs) {
-				return -1;
-			} else {
-				if (this.time < other.time) {
-					return -1;
-				} else if (this.time > other.time) {
-					return 1;
-				} else {
+		public void submitInc(int pid) {
+			if (correct[pid]) {
+				incorrect[pid]++;
+			}
+		}
+		
+		public int compareTo(Contestant other) {
+			if (this.probs == other.probs) {
+				if (other.time == this.time) {
 					return this.id - other.id;
+				} else {
+					return this.time - other.time;
 				}
+			} else {
+				return other.probs - this.probs;
 			}
 		}
 	}
